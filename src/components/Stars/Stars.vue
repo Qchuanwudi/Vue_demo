@@ -17,6 +17,7 @@ export default {
       required: true
     }
   },
+
   computed: {
     starClassArr() {
       let { rating } = this;
