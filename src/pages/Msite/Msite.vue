@@ -133,6 +133,6 @@ export default {
               color #666
 
       .swiper-pagination
-        >span.swiper-pagination-bullet-active
-          background #02a774
+        /deep/span.swiper-pagination-bullet-active
+          background green
 </style>

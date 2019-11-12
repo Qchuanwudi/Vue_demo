@@ -16,11 +16,32 @@
         <form>
           <div :class="{on: !isPassWordLogin}">
             <section class="login_message">
-              <input type="tel" maxlength="11" placeholder="手机号" />
-              <button disabled="disabled" class="get_verification">获取验证码</button>
+              <input
+                v-model="phone"
+                name="phone"
+                v-validate="'required|phone'"
+                type="tel"
+                maxlength="11"
+                placeholder="手机号"
+              />
+              <span style="color: red;" v-show="errors.has('phone')">{{errors.first('phone')}}</span>
+              <button
+                @click.prevent="sendCode"
+                :disabled="!isRightPhoneNumber || !!countDown"
+                class="get_verification"
+                :class="isRightPhoneNumber?'right_phone_number':''"
+              >{{countDown?`${countDown}s后可以再次获取`:'获取验证码'}}</button>
             </section>
             <section class="login_verification">
-              <input type="tel" maxlength="8" placeholder="验证码" />
+              <input
+                v-model="code"
+                v-validate="'required|code'"
+                name="code"
+                type="tel"
+                maxlength="8"
+                placeholder="验证码"
+              />
+              <span style="color: red;" v-show="errors.has('code')">{{errors.first('code')}}</span>
             </section>
             <section class="login_hint">
               温馨提示：未注册硅谷外卖帐号的手机号，登录时将自动注册，且代表已同意
@@ -30,22 +51,59 @@
           <div :class="{on: isPassWordLogin}">
             <section>
               <section class="login_message">
-                <input type="tel" maxlength="11" placeholder="手机/邮箱/用户名" />
+                <input
+                  v-model="name"
+                  name="username"
+                  v-validate="'required'"
+                  type="tel"
+                  maxlength="11"
+                  placeholder="手机/邮箱/用户名"
+                />
+                <span
+                  style="color:red;"
+                  v-show="errors.has('username')"
+                >{{errors.first('username')}}</span>
               </section>
               <section class="login_verification">
-                <input type="tel" maxlength="8" placeholder="密码" />
-                <div class="switch_button off">
-                  <div class="switch_circle"></div>
-                  <span class="switch_text">...</span>
+                <input
+                  v-validate="'required'"
+                  :type="isShowPassword?'tel':'password'"
+                  maxlength="8"
+                  placeholder="密码"
+                  name="pwd"
+                  v-model="pwd"
+                />
+                <span style="color: red;" v-show="errors.has('pwd')">{{errors.first('pwd')}}</span>
+                <div
+                  @click="isShowPassword=!isShowPassword"
+                  class="switch_button"
+                  :class="isShowPassword?'on':'off'"
+                >
+                  <div class="switch_circle" :class="{right:isShowPassword}"></div>
+                  <span class="switch_text">{{isShowPassword?'abc':'...'}}</span>
                 </div>
               </section>
               <section class="login_message">
-                <input type="text" maxlength="11" placeholder="验证码" />
-                <img class="get_verification" src="../../commom/images/captcha.svg" alt="captcha" />
+                <input
+                  v-model="captcha"
+                  name="captcha"
+                  v-validate="'required'"
+                  type="text"
+                  maxlength="11"
+                  placeholder="验证码"
+                />
+                <span style="color: red;" v-show="errors.has('captcha')">{{errors.first('captcha')}}</span>
+                <img
+                  ref="captcha"
+                  class="get_verification"
+                  @click="updateCaptcha"
+                  src="http://localhost:4000/captcha"
+                  alt="captcha"
+                />
               </section>
             </section>
           </div>
-          <button class="login_submit">登录</button>
+          <button class="login_submit" @click.prevent="login">登录</button>
         </form>
         <a href="javascript:;" class="about_us">关于我们</a>
       </div>
@@ -57,11 +115,84 @@
 </template>
 
 <script>
+import { loginWithPassword, loginWithPhone } from "../../api";
+
 export default {
   data() {
     return {
-      isPassWordLogin: false // 标识是否是用户名/密码登录
+      isPassWordLogin: false, // 标识是否是用户名/密码登录
+      isShowPassword: false, // 是否显示密码
+      name: "",
+      pwd: "",
+      captcha: "",
+      phone: "",
+      code: "",
+      countDown: 0 //倒计时
     };
+  },
+
+  methods: {
+    updateCaptcha() {
+      this.$refs.captcha.src =
+        "http://localhost:4000/captcha?time=" + Date.now();
+    },
+
+    async login() {
+      let { isPassWordLogin, name, pwd, captcha, phone, code } = this;
+      let names = isPassWordLogin
+        ? ["username", "pwd", "captcha"]
+        : ["phone", "code"];
+
+      const success = await this.$validator.validateAll(names);
+      console.log(success);
+      if (success) {
+        alert("前端验证成功");
+        let result;
+        if (isPassWordLogin) {
+          result = await this.$API.loginWithPassword(name, pwd, captcha);
+          if (result.code === 1) {
+            this.captcha = "";
+            this.updateCaptcha();
+          }
+        } else {
+          // 手机号/验证码登录
+          result = await this.$API.loginWithPhone(phone, code);
+          if (result.code === 1) {
+            this.code = "";
+          }
+        }
+
+        if (result.code === 0) {
+          alert("登录成功");
+          this.$store.dispatch("getUserAction", { user: result.data });
+          this.$router.replace("/profile");
+        }
+      } else {
+        alert("前端验证失败");
+      }
+    },
+    async sendCode() {
+      console.log("发送验证码");
+
+      let result = await this.$API.sendCode(this.phone);
+      if (result.code === 0) {
+        alert("发送成功");
+      } else {
+        alert("发送失败");
+      }
+
+      this.countDown = 10;
+      this.intervalId = setInterval(() => {
+        this.countDown--;
+        this.countDown === 0 && clearInterval(this.intervalId);
+      }, 1000);
+    }
+  },
+
+  computed: {
+    isRightPhoneNumber() {
+      return /^1(3|4|5|6|7|8|9)\d{9}$/.test(this.phone);
+    }
   }
 };
 </script>
@@ -141,6 +272,9 @@ export default {
               font-size 14px
               background transparent
 
+              &.right_phone_number
+                color #333
+
           .login_verification
             position relative
             margin-top 16px
@@ -185,6 +319,9 @@ export default {
                 background #fff
                 box-shadow 0 2px 4px 0 rgba(0, 0, 0, 0.1)
                 transition transform 0.3s
+
+                &.right
+                  transform translateX(27px)
 
           .login_hint
             margin-top 12px
