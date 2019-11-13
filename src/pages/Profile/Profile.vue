@@ -1,7 +1,6 @@
 <template>
   <section class="profile">
     <GshopHeader title="我的" />
-
     <section class="profile-number">
       <a @click="toLogin" href="javascript:" class="profile-link">
         <div class="profile_image">

@@ -63,7 +63,18 @@ export const autoLogin = () => ajax({
   url: '/auto_login',
   headers: {
     needToken: true
-
   }
+})
 
+
+
+
+//测试模拟数据
+export const getShopDatas = () => ajax({
+
+  url: '/shopDatas'
+})
+export const test = () => ajax({
+
+  url: '/test1'
 })
