@@ -1,8 +1,9 @@
 <template>
   <div id="goodContainer">
     <div class="leftContainer">
-      <ul class="navList" v-if="goods">
+      <ul ref="leftUl" class="navList" v-if="goods">
         <li
+          @click="changeNavIndex(index)"
           class="navItem"
           :class="{ active: navIndex === index }"
           v-for="(good, index) in goods"
@@ -36,7 +37,7 @@
                   <span class="now">￥{{ food.price }}</span>
                 </div>
                 <div class="cartcontrol-wrapper">
-                  CartControl组件
+                  <CartControl :food="food" />
                 </div>
               </div>
             </li>
@@ -44,13 +45,19 @@
         </li>
       </ul>
     </div>
+    <ShopCart />
   </div>
 </template>
 
 <script>
 import BScroll from "better-scroll";
+import ShopCart from "../../../components/ShopCart/ShopCart";
 import { mapState } from "vuex";
 export default {
+  components: {
+    ShopCart
+  },
+
   data() {
     return {
       scrollY: 0, // 记录右侧滑动内容滑动的距离
@@ -71,23 +78,36 @@ export default {
     ...mapState({
       goods: state => state.shop.shopDatas.goods
     }),
+    //计算右侧列表滑动
     navIndex() {
       let { tops, scrollY } = this;
-      return tops.findIndex(
-        (top, index) => scrollY >= top && scrollY < tops[index + 1]
+      let index = tops.findIndex(
+        (top, index) => scrollY >= top && scrollY < tops[index + 1] //滑动大于起始点，小于第二个起始点
       );
+      if (this.leftScroll && this.index !== index) {
+        //如果letftScroll值为undfind不执行语句，当有值了才执行
+        console.log("滑动了");
+        this.index = index;
+        this.leftScroll.scrollToElement(
+          this.$refs.leftUl.children[index],
+          2000
+        );
+      }
+      return index;
     }
   },
   methods: {
     _initScroll() {
-      new BScroll(".leftContainer", {
-        scrollY: true // 设置纵向滑动
+      this.leftScroll = new BScroll(".leftContainer", {
+        scrollY: true, // 设置纵向滑动
+        click: true // 允许点击
       });
       this.rightScroll = new BScroll(".rightContainer", {
         scrollY: true, // 设置纵向滑动
         // probeType: 1, // 非实时
         probeType: 2 // 实时
         // probeType: 3, // 实时/惯性滑动
+        // click: true // 允许点击
       });
 
       this.rightScroll.on("scroll", ({ x, y }) => {
@@ -109,11 +129,16 @@ export default {
         tops.push(top);
       }
       this.tops = tops;
+    },
+    //点击左侧列表更新对应右侧列表
+    changeNavIndex(index) {
+      console.log("xxx");
+      this.scrollY = this.tops[index];
+      this.rightScroll.scrollTo(0, -this.scrollY, 2000);
     }
   },
   watch: {
     goods(newValue, oldValue) {
-      console.log(newValue, oldValue);
       this.$nextTick(() => {
         // 页面下一次全部渲染完毕
         this._initScroll();
@@ -125,80 +150,99 @@ export default {
 </script>
 
 <style lang="stylus" rel="stylesheet/stylus">
-@import "../../../commom/stylus/mixins.styl"
+@import '../../../commom/stylus/mixins.styl'
+
 #goodContainer
   display flex
   overflow hidden
-  /*position absolute*/
-  /*bottom 0*/
-  /*top 224px*/
-  height calc(100vh - 224px)  /*vh, vw 1vh == 1%视口高度*/
+  /* position absolute */
+  /* bottom 0 */
+  /* top 224px */
+  height calc(100vh - 224px) /* vh, vw 1vh == 1%视口高度 */
+
   .leftContainer
     width 80px
     background #f3f5f7
+
     .navList
       .navItem
         text-align center
         height 40px
         line-height 40px
+
         &.active
           background #fff
+
         p
           width 70px
           margin 0 auto
-          bottom-border-1px(rgba(7,17,27,0.1))
+          bottom-border-1px(rgba(7, 17, 27, 0.1))
+
   .rightContainer
     width 295px
+
     .title
-      padding-left: 14px
-      height: 26px
-      line-height: 26px
-      border-left: 2px solid #d9dde1
-      font-size: 12px
-      color: rgb(147, 153, 159)
-      background: #f3f5f7
+      padding-left 14px
+      height 26px
+      line-height 26px
+      border-left 2px solid #d9dde1
+      font-size 12px
+      color rgb(147, 153, 159)
+      background #f3f5f7
+
     .food-item
-      display: flex
-      margin: 18px
-      padding-bottom: 18px
+      display flex
+      margin 18px
+      padding-bottom 18px
       bottom-border-1px(rgba(7, 17, 27, 0.1))
+
       &:last-child
         border-none()
-        margin-bottom: 0
+        margin-bottom 0
+
       .icon
-        flex: 0 0 57px
-        margin-right: 10px
+        flex 0 0 57px
+        margin-right 10px
+
       .content
-        flex: 1
+        flex 1
+
         .name
-          margin: 2px 0 8px 0
-          height: 14px
-          line-height: 14px
-          font-size: 14px
-          color: rgb(7, 17, 27)
+          margin 2px 0 8px 0
+          height 14px
+          line-height 14px
+          font-size 14px
+          color rgb(7, 17, 27)
+
         .desc, .extra
-          line-height: 10px
-          font-size: 10px
-          color: rgb(147, 153, 159)
+          line-height 10px
+          font-size 10px
+          color rgb(147, 153, 159)
+
         .desc
-          line-height: 12px
-          margin-bottom: 8px
+          line-height 12px
+          margin-bottom 8px
+
         .extra
           .count
-            margin-right: 12px
+            margin-right 12px
+
         .price
-          font-weight: 700
-          line-height: 24px
+          font-weight 700
+          line-height 24px
+
           .now
-            margin-right: 8px
-            font-size: 14px
-            color: rgb(240, 20, 20)
+            margin-right 8px
+            font-size 14px
+            color rgb(240, 20, 20)
+
           .old
-            text-decoration: line-through
-            font-size: 10px
-            color: rgb(147, 153, 159)
+            text-decoration line-through
+            font-size 10px
+            color rgb(147, 153, 159)
+
         .cartcontrol-wrapper
-          position: absolute
-          right: 0
-          bottom: 12px
+          position absolute
+          right 0
+          bottom 12px
 </style>
