@@ -6,13 +6,18 @@ import {
 import {
   SAVE_SHOPDATAS,
   ADD_FOOD_COUNT,
-  DEL_FOOD_COUNT
+  DEL_FOOD_COUNT,
+  CLEAR_CARTSHOPS,
+  SAVE_CARTSHOPS
 } from '../mutations-type'
 
 const state = {
   shopDatas: {}, // 初始化商家信息数据
   cartShops: [], // 购物车的数据
 }
+
+
+
 
 
 const actions = {
@@ -34,6 +39,14 @@ const mutations = {
   }) {
     state.shopDatas = shopDatas
   },
+
+  [SAVE_CARTSHOPS](state, {
+    cartShops
+  }) {
+    state.cartShops = cartShops
+  },
+
+
   [ADD_FOOD_COUNT](state, {
     food
   }) {
@@ -51,12 +64,17 @@ const mutations = {
   }) {
     if (food.count) {
       food.count--
-      if (!!!food.count) {
+      if (!food.count) {
 
-
+        // 从购物车删除商品
         state.cartShops.splice(state.cartShops.indexOf(food, 1))
       }
     }
+  },
+  [CLEAR_CARTSHOPS](state) {
+    state.cartShops.forEach(food => food.count = 0)
+    state.cartShops = []
+
   }
 }
 

@@ -51,6 +51,7 @@
 
 <script>
 import BScroll from "better-scroll";
+import Vue from "vue";
 import ShopCart from "../../../components/ShopCart/ShopCart";
 import { mapState } from "vuex";
 export default {
@@ -61,7 +62,9 @@ export default {
   data() {
     return {
       scrollY: 0, // 记录右侧滑动内容滑动的距离
-      tops: [] // 记录右侧所有li到滑动页面顶部的距离
+      tops: [], // 记录右侧所有li到滑动页面顶部的距离
+      num: 1,
+      test: {}
     };
   },
   async mounted() {
@@ -158,7 +161,7 @@ export default {
   /* position absolute */
   /* bottom 0 */
   /* top 224px */
-  height calc(100vh - 224px) /* vh, vw 1vh == 1%视口高度 */
+  height calc(100vh - 278px) /* vh, vw 1vh == 1%视口高度 */
 
   .leftContainer
     width 80px
